@@ -53,7 +53,6 @@ class MainWindow(QtWidgets.QWidget):
         self.ui.pb_delete.clicked.connect(self.delete_files)
         self.ui.pb_about.clicked.connect(self.open_about)
         self.openDelegate = PushButtonDelegate()
-        # self.openDelegate.clicked.connect(lambda x: print(x))
         self.openDelegate.clicked.connect(self.download_file)
 
     def init_about_window(self):
@@ -89,8 +88,7 @@ class MainWindow(QtWidgets.QWidget):
             print(file_local)
             files.append(('files', open(f'{file_local}', 'rb')))
         resp = requests.post(url=f'{self.url}/frames/', files=files)
-        # print(resp.json())
-        QtWidgets.QMessageBox.warning(self, "Готово",
+        QtWidgets.QMessageBox.information(self, "Готово",
                                       f"Файлы отправлены. Ваш номер запроса: {resp.json()['request_number']}")
 
     def get_info(self):
@@ -118,10 +116,8 @@ class MainWindow(QtWidgets.QWidget):
                 stm.setItem(row, 2, QtGui.QStandardItem(self.download_list_files[row][1]))
                 stm.setItem(row, 3, QtGui.QStandardItem("Скачать"))
             self.ui.tableView.setModel(stm)
-            # self.ui.tableView.selectionModel().currentChanged.connect(self.onRowClicked)
             self.ui.tableView.setItemDelegateForColumn(3, self.openDelegate)
             # self.ui.tableView.showDelegate
-
 
         else:
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Неправильный номер запроса")
@@ -141,16 +137,18 @@ class MainWindow(QtWidgets.QWidget):
     def download_file(self, item: QtCore.QModelIndex):
         # print(item.row())
         file_name = self.download_list_files[item.row()][0]
-        fname = QtWidgets.QFileDialog.getSaveFileName(self, "Save as", file_name)
-
-        directory_file = fname[0].replace(fname[0].split('/')[-1], "")
-        print(directory_file)
+        fname, ok = QtWidgets.QFileDialog.getSaveFileName(self, "Save as", file_name)
+        if not ok:
+            return
+        directory_file = fname.replace(fname.split('/')[-1], "")
+        # print(fname)
+        # print(directory_file)
 
         source = self.ui.getinfoline.text()
         resp = requests.get(f"{self.url}/bucket/{source}")
         bucket_name = resp.json()['bucket_name']
-        client.fget_object(bucket_name, file_name, f"{fname[0]}")
-        QtWidgets.QMessageBox.warning(self, "Успешно", f"{file_name} загружен в {directory_file}")
+        client.fget_object(bucket_name, file_name, f"{fname}")
+        QtWidgets.QMessageBox.information(self, "Успешно", f"{file_name} \nЗагружен в \n{directory_file}")
 
 
     def showSaveDialog(self):
