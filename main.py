@@ -135,15 +135,12 @@ class MainWindow(QtWidgets.QWidget):
     #     print(item)
 
     def download_file(self, item: QtCore.QModelIndex):
-        # print(item.row())
+
         file_name = self.download_list_files[item.row()][0]
         fname, ok = QtWidgets.QFileDialog.getSaveFileName(self, "Save as", file_name)
         if not ok:
             return
         directory_file = fname.replace(fname.split('/')[-1], "")
-        # print(fname)
-        # print(directory_file)
-
         source = self.ui.getinfoline.text()
         resp = requests.get(f"{self.url}/bucket/{source}")
         bucket_name = resp.json()['bucket_name']
@@ -153,7 +150,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def showSaveDialog(self):
         fname = QtWidgets.QFileDialog.getExistingDirectoryUrl(self, "Save as").url()[8:]
-        self.bucket_name = self.ui.getinfoline.text()
+        # self.bucket_name = self.ui.getinfoline.text()
         try:
             source = self.ui.getinfoline.text()
             resp = requests.get(f"{self.url}/bucket/{source}")
