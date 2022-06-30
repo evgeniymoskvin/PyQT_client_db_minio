@@ -101,13 +101,16 @@ class MainWindow(QtWidgets.QWidget):
             self.ui.pb_download_all.setEnabled(True)
             self.ui.pb_delete.setEnabled(True)
             dict_ = resp.json()
-            headers = ["№", "Название", "Дата регистрации"]
+            headers = ["№", "Название", "Дата регистрации", "Загрузить"]
             stm = QtGui.QStandardItemModel()
             stm.setHorizontalHeaderLabels(headers)
             for key in dict_:
                 if key != "request_number":
-                    temp_list = [val for val in dict_[key].values()]
-                    self.download_list_files.append(temp_list)
+                    try:
+                        temp_list = [val for val in dict_[key].values()]
+                        self.download_list_files.append(temp_list)
+                    except AttributeError:
+                        QtWidgets.QMessageBox.warning(self, "Ошибка", f"Неправильный запрос")
 
             for row in range(len(self.download_list_files)):
                 stm.setItem(row, 0, QtGui.QStandardItem(str(row + 1)))
@@ -136,16 +139,18 @@ class MainWindow(QtWidgets.QWidget):
     #     print(item)
 
     def download_file(self, item: QtCore.QModelIndex):
-        # signal_input = self.sender()
-        print(item.row())
+        # print(item.row())
+        file_name = self.download_list_files[item.row()][0]
+        fname = QtWidgets.QFileDialog.getSaveFileName(self, "Save as", file_name)
 
+        directory_file = fname[0].replace(fname[0].split('/')[-1], "")
+        print(directory_file)
 
-        # fname = QtWidgets.QFileDialog.getExistingDirectoryUrl(self, "Save as").url()[8:]
-        # self.bucket_name = self.ui.getinfoline.text()
-        # source = self.ui.getinfoline.text()
-        # index.row()
-        # resp = requests.get(f"{self.url}/bucket/{source}")
-        # client.fget_object(resp.json()['bucket_name'], list[0], f"{fname}/{item[0]}")
+        source = self.ui.getinfoline.text()
+        resp = requests.get(f"{self.url}/bucket/{source}")
+        bucket_name = resp.json()['bucket_name']
+        client.fget_object(bucket_name, file_name, f"{fname[0]}")
+        QtWidgets.QMessageBox.warning(self, "Успешно", f"{file_name} загружен в {directory_file}")
 
 
     def showSaveDialog(self):
@@ -167,7 +172,6 @@ class MainWindow(QtWidgets.QWidget):
                                               f"{len(self.download_list_files)} файлов загружены в {fname}")
         except:
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Ошибка загрузки")
-        # print(fname.url())
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         reply = QtWidgets.QMessageBox.question(self, 'Закрыть окно?', 'Вы хотите закрыть окно?',
@@ -190,26 +194,6 @@ class AboutWindow(QtWidgets.QWidget):
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self.textarea)
         self.setLayout(main_layout)
-
-
-# class TableModel(QtCore.QAbstractTableModel):
-#     def __init__(self, data):
-#         super(TableModel, self).__init__()
-#         self._data = data
-#
-#         self.setHeaderData(0, QtCore.Qt.Horizontal, "Название файла")
-#
-#     def data(self, index, role):
-#         if role == QtCore.Qt.DisplayRole:
-#             table = self._data[index.row()][index.column()]
-#             return table
-#
-#     def rowCount(self, index):
-#         return len(self._data)
-#
-#
-#     def columnCount(self, index):
-#         return len(self._data[0])
 
 
 if __name__ == '__main__':
