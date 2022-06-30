@@ -13,6 +13,21 @@ client = Minio(
 )
 
 
+class PushButtonDelegate(QtWidgets.QStyledItemDelegate):
+    clicked = QtCore.Signal(QtCore.QModelIndex)
+
+    def createEditor(self, parent, option, index):
+        button = QtWidgets.QPushButton(parent)
+        button.clicked.connect(lambda *args, ix=index: self.clicked.emit(ix))
+        return button
+
+    def setEditorData(self, editor, index):
+        editor.setText("Скачать")
+
+    def updateEditorGeometry(self, editor, option, index):
+        editor.setGeometry(option.rect)
+
+
 class MainWindow(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -23,6 +38,8 @@ class MainWindow(QtWidgets.QWidget):
         self.ui = Ui_Form()
         self.init_about_window()
         self.ui.setupUi(self)
+
+
         self.setAcceptDrops(True)
         self.ui.pb_download_all.setEnabled(False)
         self.ui.pb_delete.setEnabled(False)
@@ -35,7 +52,9 @@ class MainWindow(QtWidgets.QWidget):
         self.ui.pb_download_all.clicked.connect(self.showSaveDialog)
         self.ui.pb_delete.clicked.connect(self.delete_files)
         self.ui.pb_about.clicked.connect(self.open_about)
-
+        self.openDelegate = PushButtonDelegate()
+        # self.openDelegate.clicked.connect(lambda x: print(x))
+        self.openDelegate.clicked.connect(self.download_file)
 
     def init_about_window(self):
         self.child_window = AboutWindow()
@@ -44,17 +63,11 @@ class MainWindow(QtWidgets.QWidget):
         self.child_window.show()
 
     def dragEnterEvent(self, event):
-        # Тут выполняются проверки и дается (или нет) разрешение на Drop
         mime = event.mimeData()
-
-        # Если перемещаются ссылки
         if mime.hasUrls():
-            # Разрешаем действие перетаскивания
             event.acceptProposedAction()
 
     def dropEvent(self, event):
-        # Обработка события Drop
-
         for url in event.mimeData().urls():
             file_name = url.toLocalFile()
             self.file_list.append(url.toLocalFile())
@@ -82,22 +95,31 @@ class MainWindow(QtWidgets.QWidget):
 
     def get_info(self):
         source = self.ui.getinfoline.text()
+        self.download_list_files.clear()
         resp = requests.get(f"{self.url}/frames/{source}")
         if 'error' not in resp.json().keys():
             self.ui.pb_download_all.setEnabled(True)
             self.ui.pb_delete.setEnabled(True)
             dict_ = resp.json()
+            headers = ["№", "Название", "Дата регистрации"]
+            stm = QtGui.QStandardItemModel()
+            stm.setHorizontalHeaderLabels(headers)
             for key in dict_:
                 if key != "request_number":
                     temp_list = [val for val in dict_[key].values()]
-                    temp_list.append("Скачать")
                     self.download_list_files.append(temp_list)
-            print(self.download_list_files)
-            self.model = TableModel(self.download_list_files)
-            # self.model.setHeaderData(0, QtCore.Qt.Horizontal, "№")
-            self.model.setHeaderData(0, QtCore.Qt.Horizontal, "Название файла")
-            self.model.setHeaderData(1, QtCore.Qt.Horizontal, "Дата регистрации")
-            self.ui.tableView.setModel(self.model)
+
+            for row in range(len(self.download_list_files)):
+                stm.setItem(row, 0, QtGui.QStandardItem(str(row + 1)))
+                stm.setItem(row, 1, QtGui.QStandardItem(self.download_list_files[row][0]))
+                stm.setItem(row, 2, QtGui.QStandardItem(self.download_list_files[row][1]))
+                stm.setItem(row, 3, QtGui.QStandardItem("Скачать"))
+            self.ui.tableView.setModel(stm)
+            # self.ui.tableView.selectionModel().currentChanged.connect(self.onRowClicked)
+            self.ui.tableView.setItemDelegateForColumn(3, self.openDelegate)
+            # self.ui.tableView.showDelegate
+
+
         else:
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Неправильный номер запроса")
 
@@ -109,6 +131,22 @@ class MainWindow(QtWidgets.QWidget):
                                                QtWidgets.QMessageBox.No)
         if reply == QtWidgets.QMessageBox.Yes:
             requests.delete(f"{self.url}/frames/{source}")
+
+    # def onRowClicked(self, item):
+    #     print(item)
+
+    def download_file(self, item: QtCore.QModelIndex):
+        # signal_input = self.sender()
+        print(item.row())
+
+
+        # fname = QtWidgets.QFileDialog.getExistingDirectoryUrl(self, "Save as").url()[8:]
+        # self.bucket_name = self.ui.getinfoline.text()
+        # source = self.ui.getinfoline.text()
+        # index.row()
+        # resp = requests.get(f"{self.url}/bucket/{source}")
+        # client.fget_object(resp.json()['bucket_name'], list[0], f"{fname}/{item[0]}")
+
 
     def showSaveDialog(self):
         fname = QtWidgets.QFileDialog.getExistingDirectoryUrl(self, "Save as").url()[8:]
@@ -151,27 +189,27 @@ class AboutWindow(QtWidgets.QWidget):
         self.textarea = QtWidgets.QLabel("Отправляем файлы в min.io и записываем в sqlite\n")
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self.textarea)
-
         self.setLayout(main_layout)
 
-class TableModel(QtCore.QAbstractTableModel):
-    def __init__(self, data):
-        super(TableModel, self).__init__()
-        self._data = data
 
-        self.setHeaderData(0, QtCore.Qt.Horizontal, "Название файла")
-
-    def data(self, index, role):
-        if role == QtCore.Qt.DisplayRole:
-            table = self._data[index.row()][index.column()]
-            return table
-
-    def rowCount(self, index):
-        return len(self._data)
-
-
-    def columnCount(self, index):
-        return len(self._data[0])
+# class TableModel(QtCore.QAbstractTableModel):
+#     def __init__(self, data):
+#         super(TableModel, self).__init__()
+#         self._data = data
+#
+#         self.setHeaderData(0, QtCore.Qt.Horizontal, "Название файла")
+#
+#     def data(self, index, role):
+#         if role == QtCore.Qt.DisplayRole:
+#             table = self._data[index.row()][index.column()]
+#             return table
+#
+#     def rowCount(self, index):
+#         return len(self._data)
+#
+#
+#     def columnCount(self, index):
+#         return len(self._data[0])
 
 
 if __name__ == '__main__':
@@ -181,3 +219,4 @@ if __name__ == '__main__':
     win.show()
 
     app.exec_()
+
