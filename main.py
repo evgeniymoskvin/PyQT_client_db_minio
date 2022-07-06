@@ -47,11 +47,9 @@ class MainWindow(QtWidgets.QWidget):
         self.init_about_window()  # инициализируем окно about
         # self.init_connection_window()  # инициализируем окно connection
 
-        self.conn_window = ConnectionWindow()
-
         self.ui.setupUi(self)
 
-        self.url = self.set_url_label()
+        self.url = self.set_url()
 
         self.initStatusConnection()  # Проверяем статус подключения при загрузке программы
 
@@ -68,18 +66,18 @@ class MainWindow(QtWidgets.QWidget):
         self.ui.pb_delete.clicked.connect(self.delete_files)
 
         self.ui.pb_about.clicked.connect(self.open_about)
+
+        self.conn_window = ConnectionWindow()
         self.ui.pb_connect_adress.clicked.connect(self.open_connection)
-        self.conn_window.data[str].connect(self.abc)
+        self.conn_window.urlLineEdit.setText(self.url)
+        self.conn_window.data[str].connect(self.set_url)
 
         self.openDelegate = PushButtonDelegate()
         self.openDelegate.clicked.connect(self.download_file)
 
-    def abc(self, url_name):
-        self.url = f'http://{url_name}'
-        self.ui.labelUrl.setText(self.url)
 
-
-    def set_url_label(self, url='http://127.0.0.1:8000'):
+    def set_url(self, url='http://127.0.0.1:8000'):
+        self.url = url
         self.ui.labelUrl.setText(url)
         return url
 
@@ -100,7 +98,7 @@ class MainWindow(QtWidgets.QWidget):
                 # Подключаем горячие клавиши
                 self.shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+O"), self)
                 self.shortcut.activated.connect(self.add_files_to_send)
-        except requests.exceptions.ConnectionError or requests.exceptions.MissingSchema:
+        except:
             self.ui.statusLabel.setText("Подключение отсутствует")
             self.ui.getinfoline.setEnabled(False)
             self.ui.pb_get_info.setEnabled(False)
