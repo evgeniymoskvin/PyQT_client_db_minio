@@ -68,7 +68,7 @@ class Ui_Form(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 509, 401))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 98, 89))
         self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.tableView = QTableView(self.scrollAreaWidgetContents)
@@ -105,13 +105,25 @@ class Ui_Form(object):
 
         self.verticalLayout_5.addWidget(self.pb_about)
 
+        self.pb_connect_adress = QPushButton(self.tab_3)
+        self.pb_connect_adress.setObjectName(u"pb_connect_adress")
+
+        self.verticalLayout_5.addWidget(self.pb_connect_adress)
+
         self.tabWidget.addTab(self.tab_3, "")
 
         self.verticalLayout_2.addWidget(self.tabWidget)
 
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.horizontalSpacer = QSpacerItem(208, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.labelUrl = QLabel(Form)
+        self.labelUrl.setObjectName(u"labelUrl")
+        self.labelUrl.setMargin(0)
+        self.labelUrl.setIndent(-1)
+
+        self.horizontalLayout_3.addWidget(self.labelUrl)
+
+        self.horizontalSpacer = QSpacerItem(128, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer)
 
@@ -138,7 +150,7 @@ class Ui_Form(object):
 
         self.retranslateUi(Form)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(2)
 
 
         QMetaObject.connectSlotsByName(Form)
@@ -154,7 +166,9 @@ class Ui_Form(object):
         self.pb_delete.setText(QCoreApplication.translate("Form", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("Form", u"\u0418\u043d\u0444\u043e\u0440\u043c\u0430\u0446\u0438\u044f \u043e\u0431 \u043e\u0442\u043f\u0440\u0430\u0432\u043a\u0435", None))
         self.pb_about.setText(QCoreApplication.translate("Form", u"\u041f\u043e\u0441\u043c\u043e\u0442\u0440\u0435\u0442\u044c \u043f\u043e\u0434\u0441\u043a\u0430\u0437\u043a\u0443", None))
+        self.pb_connect_adress.setText(QCoreApplication.translate("Form", u"\u0410\u0434\u0440\u0435\u0441 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u044f", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("Form", u"About", None))
+        self.labelUrl.setText(QCoreApplication.translate("Form", u"URL", None))
         self.statusLabel.setText(QCoreApplication.translate("Form", u"Status", None))
         self.pb_reconnect.setText(QCoreApplication.translate("Form", u"\u21ba", None))
     # retranslateUi

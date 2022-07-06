@@ -19,7 +19,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>0</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -74,8 +74,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>509</width>
-              <height>401</height>
+              <width>98</width>
+              <height>89</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -118,6 +118,13 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QPushButton" name="pb_connect_adress">
+           <property name="text">
+            <string>Адрес подключения</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </widget>
@@ -125,13 +132,26 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
+        <widget class="QLabel" name="labelUrl">
+         <property name="text">
+          <string>URL</string>
+         </property>
+         <property name="margin">
+          <number>0</number>
+         </property>
+         <property name="indent">
+          <number>-1</number>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>208</width>
+           <width>128</width>
            <height>20</height>
           </size>
          </property>

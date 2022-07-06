@@ -4,6 +4,7 @@ import requests
 from PySide2 import QtCore, QtWidgets, QtGui
 from ui.clientdb import Ui_Form
 from settings import client
+from ui.icons import resource
 
 
 class PushButtonDelegate(QtWidgets.QStyledItemDelegate):
@@ -12,9 +13,7 @@ class PushButtonDelegate(QtWidgets.QStyledItemDelegate):
     def paint(self, painter, option, index):
         if (isinstance(self.parent(), QtWidgets.QAbstractItemView)
                 and self.parent().model() is index.model()):
-
             self.parent().openPersistentEditor(index)
-
 
     def createEditor(self, parent, option, index):
         button = QtWidgets.QPushButton(parent)
@@ -24,7 +23,8 @@ class PushButtonDelegate(QtWidgets.QStyledItemDelegate):
     def setEditorData(self, editor, index):
         editor.setText("Скачать")
 
-    def setModelData(self, editor:QtWidgets.QWidget, model:QtCore.QAbstractItemModel, index:QtCore.QModelIndex) -> None:
+    def setModelData(self, editor: QtWidgets.QWidget, model: QtCore.QAbstractItemModel,
+                     index: QtCore.QModelIndex) -> None:
         pass
 
     def updateEditorGeometry(self, editor, option, index):
@@ -34,14 +34,24 @@ class PushButtonDelegate(QtWidgets.QStyledItemDelegate):
 class MainWindow(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        resource.qInitResources()
+        self.setWindowIcon(QtGui.QIcon(QtGui.QPixmap(":/ico/rss.ico")))
         self.file_list = []  # список файлов для отправки
         self.download_list_files = []  # список файлов для загрузки
-        self.url = 'http://127.0.0.1:8000'
+        # self.url = self.set_url_label
+
         self.bucket_name = None  # Название корзины min.io для загрузки файла
 
         self.ui = Ui_Form()  # инициализируем окно
+
         self.init_about_window()  # инициализируем окно about
+        # self.init_connection_window()  # инициализируем окно connection
+
+        self.conn_window = ConnectionWindow()
+
         self.ui.setupUi(self)
+
+        self.url = self.set_url_label()
 
         self.initStatusConnection()  # Проверяем статус подключения при загрузке программы
 
@@ -56,9 +66,22 @@ class MainWindow(QtWidgets.QWidget):
         self.ui.pb_get_info.clicked.connect(self.get_info)
         self.ui.pb_download_all.clicked.connect(self.save_all_files)
         self.ui.pb_delete.clicked.connect(self.delete_files)
+
         self.ui.pb_about.clicked.connect(self.open_about)
+        self.ui.pb_connect_adress.clicked.connect(self.open_connection)
+        self.conn_window.data[str].connect(self.abc)
+
         self.openDelegate = PushButtonDelegate()
         self.openDelegate.clicked.connect(self.download_file)
+
+    def abc(self, url_name):
+        self.url = f'http://{url_name}'
+        self.ui.labelUrl.setText(self.url)
+
+
+    def set_url_label(self, url='http://127.0.0.1:8000'):
+        self.ui.labelUrl.setText(url)
+        return url
 
     def initStatusConnection(self):
         """
@@ -77,7 +100,7 @@ class MainWindow(QtWidgets.QWidget):
                 # Подключаем горячие клавиши
                 self.shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+O"), self)
                 self.shortcut.activated.connect(self.add_files_to_send)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError or requests.exceptions.MissingSchema:
             self.ui.statusLabel.setText("Подключение отсутствует")
             self.ui.getinfoline.setEnabled(False)
             self.ui.pb_get_info.setEnabled(False)
@@ -86,10 +109,13 @@ class MainWindow(QtWidgets.QWidget):
             self.ui.pd_open_file.setEnabled(False)
 
     def init_about_window(self):
-        self.child_window = AboutWindow()
+        self.about_window = AboutWindow()
 
     def open_about(self):
-        self.child_window.show()
+        self.about_window.show()
+
+    def open_connection(self):
+        self.conn_window.show()
 
     def dragEnterEvent(self, event):
         mime = event.mimeData()
@@ -243,6 +269,30 @@ class AboutWindow(QtWidgets.QWidget):
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self.textarea)
         self.setLayout(main_layout)
+
+
+class ConnectionWindow(QtWidgets.QWidget):
+    """
+    Окно Connection
+    """
+    data = QtCore.Signal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.initUi()
+        self.pb_ok.clicked.connect(self.send_data)
+
+    def initUi(self):
+        self.urlLineEdit = QtWidgets.QLineEdit()
+        self.pb_ok = QtWidgets.QPushButton("Ok")
+        main_layout = QtWidgets.QVBoxLayout()
+        main_layout.addWidget(self.urlLineEdit)
+        main_layout.addWidget(self.pb_ok)
+        self.setLayout(main_layout)
+
+    def send_data(self):
+        self.data.emit(self.urlLineEdit.text())
+        self.close()
 
 
 if __name__ == '__main__':
