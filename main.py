@@ -38,48 +38,51 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowIcon(QtGui.QIcon(QtGui.QPixmap(":/ico/rss.ico")))
         self.file_list = []  # список файлов для отправки
         self.download_list_files = []  # список файлов для загрузки
-        # self.url = self.set_url_label
 
         self.bucket_name = None  # Название корзины min.io для загрузки файла
 
-        self.ui = Ui_Form()  # инициализируем окно
-
-        self.init_about_window()  # инициализируем окно about
-        # self.init_connection_window()  # инициализируем окно connection
+        self.ui = Ui_Form()  # основное окно
+        self.about_window = AboutWindow()  # инициализируем окно about
 
         self.ui.setupUi(self)
 
-        self.url = self.set_url()
+        self.set_url()  # Устанавливаем url подключения по умолчанию
 
-        self.initStatusConnection()  # Проверяем статус подключения при загрузке программы
-
+        # Проверяем статус подключения при загрузке программы
         self.ui.pb_reconnect.clicked.connect(self.initStatusConnection)  # Кнопка reconnect
 
+        # Устанавливаем неактивные кнопки по умолчанию
         self.ui.pb_download_all.setEnabled(False)
         self.ui.pb_delete.setEnabled(False)
-
-        self.ui.pd_open_file.clicked.connect(self.add_files_to_send)
         self.ui.pd_send_file.setEnabled(False)
+
+        # Сигналы
+        self.ui.pd_open_file.clicked.connect(self.add_files_to_send)
         self.ui.pd_send_file.clicked.connect(self.post_file)
         self.ui.pb_get_info.clicked.connect(self.get_info)
         self.ui.pb_download_all.clicked.connect(self.save_all_files)
         self.ui.pb_delete.clicked.connect(self.delete_files)
-
         self.ui.pb_about.clicked.connect(self.open_about)
 
+        # Подключение окна Connection
         self.conn_window = ConnectionWindow()
         self.ui.pb_connect_adress.clicked.connect(self.open_connection)
         self.conn_window.urlLineEdit.setText(self.url)
         self.conn_window.data[str].connect(self.set_url)
 
+        # Делегаты
         self.openDelegate = PushButtonDelegate()
         self.openDelegate.clicked.connect(self.download_file)
 
-
-    def set_url(self, url='http://127.0.0.1:8000'):
-        self.url = url
+    def set_url(self, url='http://127.0.0.1:8000') -> str:
+        """
+        Установка url для подключения к сервису
+        :param url: Строковое значение получаемое из окна Connection
+        :return: Строка url
+        """
         self.ui.labelUrl.setText(url)
-        return url
+        self.url = url
+        self.initStatusConnection()
 
     def initStatusConnection(self):
         """
@@ -105,9 +108,7 @@ class MainWindow(QtWidgets.QWidget):
             self.ui.listWidget.setEnabled(False)
             self.setAcceptDrops(False)
             self.ui.pd_open_file.setEnabled(False)
-
-    def init_about_window(self):
-        self.about_window = AboutWindow()
+            QtWidgets.QMessageBox.warning(self, "Ошибка", f"Отсутствует подключение к {self.url}")
 
     def open_about(self):
         self.about_window.show()
@@ -144,9 +145,8 @@ class MainWindow(QtWidgets.QWidget):
         """
         Отправка файлов на сервис по api
         """
-        files = []
+        files = []  # Временный список файлов для отправки
         for file_local in self.file_list:
-            print(file_local)
             files.append(('files', open(f'{file_local}', 'rb')))
         resp = requests.post(url=f'{self.url}/frames/', files=files)
         QtWidgets.QMessageBox.information(self, "Готово",
@@ -157,12 +157,13 @@ class MainWindow(QtWidgets.QWidget):
         Получаем информацию об отправке
         """
         source = self.ui.getinfoline.text()  # Получаем номер отправки из lineEdit
-        self.download_list_files.clear()
+        self.download_list_files.clear()  # Очищаем список файлов для скачивания
         resp = requests.get(f"{self.url}/frames/{source}")
-        if 'error' not in resp.json().keys():
+        if 'error' not in resp.json().keys():  # Проверяем есть ли ошибки
             self.ui.pb_download_all.setEnabled(True)
             self.ui.pb_delete.setEnabled(True)
             dict_ = resp.json()
+            # Формируем таблицу с файлами
             headers = ["№", "Название", "Дата регистрации", "Загрузить"]
             stm = QtGui.QStandardItemModel()
             stm.setHorizontalHeaderLabels(headers)
@@ -170,7 +171,7 @@ class MainWindow(QtWidgets.QWidget):
                 if key != "request_number":
                     try:
                         temp_list = [val for val in dict_[key].values()]
-                        self.download_list_files.append(temp_list)
+                        self.download_list_files.append(temp_list)  # Список списков с информацией о файлах
                     except AttributeError:
                         QtWidgets.QMessageBox.warning(self, "Ошибка", f"Неправильный запрос")
 
@@ -254,16 +255,18 @@ class MainWindow(QtWidgets.QWidget):
 
 class AboutWindow(QtWidgets.QWidget):
     """
-    Окно About
+    Окно About. Просто так.
     """
 
     def __init__(self, parent=None):
         super().__init__(parent)
-
         self.initUi()
 
     def initUi(self):
-        self.textarea = QtWidgets.QLabel("Отправляем файлы в min.io и записываем в sqlite\n")
+        resource.qInitResources()
+        self.setWindowIcon(QtGui.QIcon(QtGui.QPixmap(":/ico/rss.ico")))
+        self.setWindowTitle("About")
+        self.textarea = QtWidgets.QLabel("Отправляем файлы в min.io и записываем в sqlite3\n")
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self.textarea)
         self.setLayout(main_layout)
@@ -271,7 +274,7 @@ class AboutWindow(QtWidgets.QWidget):
 
 class ConnectionWindow(QtWidgets.QWidget):
     """
-    Окно Connection
+    Окно Connection. Устанавливаем IP адрес сервиса.
     """
     data = QtCore.Signal(str)
 
@@ -279,13 +282,18 @@ class ConnectionWindow(QtWidgets.QWidget):
         super().__init__(parent)
         self.initUi()
         self.pb_ok.clicked.connect(self.send_data)
+        self.shortcut.activated.connect(self.send_data)
 
     def initUi(self):
+        resource.qInitResources()
+        self.setWindowIcon(QtGui.QIcon(QtGui.QPixmap(":/ico/rss.ico")))
         self.urlLineEdit = QtWidgets.QLineEdit()
+        self.setWindowTitle("Адрес подключения")
         self.pb_ok = QtWidgets.QPushButton("Ok")
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self.urlLineEdit)
         main_layout.addWidget(self.pb_ok)
+        self.shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Enter"), self)
         self.setLayout(main_layout)
 
     def send_data(self):
