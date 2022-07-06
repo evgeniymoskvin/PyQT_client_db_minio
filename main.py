@@ -46,7 +46,7 @@ class MainWindow(QtWidgets.QWidget):
 
         self.ui.setupUi(self)
 
-        self.set_url()  # Устанавливаем url подключения по умолчанию
+        self.set_url()  # Устанавливаем url подключения по умолчанию http://127.0.0.1:8000
 
         # Проверяем статус подключения при загрузке программы
         self.ui.pb_reconnect.clicked.connect(self.initStatusConnection)  # Кнопка reconnect
@@ -82,12 +82,11 @@ class MainWindow(QtWidgets.QWidget):
         """
         self.ui.labelUrl.setText(url)
         self.url = url
-        self.initStatusConnection()
+        self.initStatusConnection()  # Проверяем подключение
 
     def initStatusConnection(self):
         """
         Проверяем подключение к серверу.
-        :return:
         """
         try:
             resp = requests.get(self.url)
@@ -175,6 +174,7 @@ class MainWindow(QtWidgets.QWidget):
                     except AttributeError:
                         QtWidgets.QMessageBox.warning(self, "Ошибка", f"Неправильный запрос")
 
+            # Заполняем таблицу
             for row in range(len(self.download_list_files)):
                 stm.setItem(row, 0, QtGui.QStandardItem(str(row + 1)))
                 stm.setItem(row, 1, QtGui.QStandardItem(self.download_list_files[row][0]))
@@ -182,8 +182,6 @@ class MainWindow(QtWidgets.QWidget):
                 stm.setItem(row, 3, QtGui.QStandardItem("Скачать"))
             self.ui.tableView.setModel(stm)
             self.ui.tableView.setItemDelegateForColumn(3, self.openDelegate)
-
-
 
         else:
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Неправильный номер запроса")
@@ -208,12 +206,12 @@ class MainWindow(QtWidgets.QWidget):
         file_name = self.download_list_files[item.row()][0]
         fname, ok = QtWidgets.QFileDialog.getSaveFileName(self, "Save as", file_name)
         if not ok:
-            return
+            return None
         directory_file = fname.replace(fname.split('/')[-1], "")
         source = self.ui.getinfoline.text()
         resp = requests.get(f"{self.url}/bucket/{source}")
         bucket_name = resp.json()['bucket_name']
-        client.fget_object(bucket_name, file_name, f"{fname}")
+        client.fget_object(bucket_name, file_name, f"{fname}")  # Скачиваем файл с хранилища
         QtWidgets.QMessageBox.information(self, "Успешно", f"{file_name} \nЗагружен в \n{directory_file}")
 
     def save_all_files(self):
