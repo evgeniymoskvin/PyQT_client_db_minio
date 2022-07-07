@@ -274,7 +274,7 @@ class ConnectionWindow(QtWidgets.QWidget):
     """
     Окно Connection. Устанавливаем IP адрес сервиса.
     """
-    data = QtCore.Signal(str)
+    data = QtCore.Signal(str)  # Сигнал с IP адресом
 
     def __init__(self, parent=None):
         super().__init__(parent)
