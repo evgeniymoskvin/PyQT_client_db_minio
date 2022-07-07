@@ -1,4 +1,5 @@
 import sys
+import time
 
 import requests
 from PySide2 import QtCore, QtWidgets, QtGui
@@ -74,7 +75,21 @@ class MainWindow(QtWidgets.QWidget):
         self.openDelegate = PushButtonDelegate()
         self.openDelegate.clicked.connect(self.download_file)
 
-    def set_url(self, url='http://127.0.0.1:8000') -> str:
+        # Загрузочное окно
+        self.loadGUI()
+
+    def loadGUI(self):
+        """
+        Загрузочное окно
+        """
+        splash = QtWidgets.QSplashScreen(
+            QtGui.QPixmap(":/logo/logo_project.png").scaled(500, 500))  # Подключаем заставку
+        splash.show()
+        time.sleep(1)
+        splash.finish(self)
+        self.show()
+
+    def set_url(self, url='http://127.0.0.1:8000'):
         """
         Установка url для подключения к сервису
         :param url: Строковое значение получаемое из окна Connection
@@ -92,6 +107,7 @@ class MainWindow(QtWidgets.QWidget):
             resp = requests.get(self.url)
             if resp.status_code == 200:
                 self.ui.statusLabel.setText("Подключено")
+                # Устанавливаем поля для отправки и получения данных активными
                 self.ui.getinfoline.setEnabled(True)
                 self.ui.pb_get_info.setEnabled(True)
                 self.ui.listWidget.setEnabled(True)
@@ -100,8 +116,9 @@ class MainWindow(QtWidgets.QWidget):
                 # Подключаем горячие клавиши
                 self.shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+O"), self)
                 self.shortcut.activated.connect(self.add_files_to_send)
-        except:
+        except requests.exceptions.ConnectionError:
             self.ui.statusLabel.setText("Подключение отсутствует")
+            # Устанавливаем поля для отправки и получения данных неактивными
             self.ui.getinfoline.setEnabled(False)
             self.ui.pb_get_info.setEnabled(False)
             self.ui.listWidget.setEnabled(False)
@@ -110,9 +127,15 @@ class MainWindow(QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(self, "Ошибка", f"Отсутствует подключение к {self.url}")
 
     def open_about(self):
+        """
+        Открытие окна about
+        """
         self.about_window.show()
 
     def open_connection(self):
+        """
+        Открытия окна Connection
+        """
         self.conn_window.show()
 
     def dragEnterEvent(self, event):
@@ -147,7 +170,7 @@ class MainWindow(QtWidgets.QWidget):
         files = []  # Временный список файлов для отправки
         for file_local in self.file_list:
             files.append(('files', open(f'{file_local}', 'rb')))
-        resp = requests.post(url=f'{self.url}/frames/', files=files)
+        resp = requests.post(url=f'{self.url}/frames/', files=files)  # post запрос на отправку файлов
         QtWidgets.QMessageBox.information(self, "Готово",
                                           f"Файлы отправлены. Ваш номер запроса: {resp.json()['request_number']}")
 
@@ -197,7 +220,7 @@ class MainWindow(QtWidgets.QWidget):
                                                QtWidgets.QMessageBox.Yes,
                                                QtWidgets.QMessageBox.No)
         if reply == QtWidgets.QMessageBox.Yes:
-            requests.delete(f"{self.url}/frames/{source}")
+            requests.delete(f"{self.url}/frames/{source}")  # delete запрос на удаление файлов и записи бд
 
     def download_file(self, item: QtCore.QModelIndex):
         """
@@ -207,8 +230,9 @@ class MainWindow(QtWidgets.QWidget):
         fname, ok = QtWidgets.QFileDialog.getSaveFileName(self, "Save as", file_name)
         if not ok:
             return None
-        directory_file = fname.replace(fname.split('/')[-1], "")
+        directory_file = fname.replace(fname.split('/')[-1], "")  # Директория для сохранения файла
         source = self.ui.getinfoline.text()
+        # Получаем название корзины с файлами
         resp = requests.get(f"{self.url}/bucket/{source}")
         bucket_name = resp.json()['bucket_name']
         client.fget_object(bucket_name, file_name, f"{fname}")  # Скачиваем файл с хранилища
@@ -280,7 +304,8 @@ class ConnectionWindow(QtWidgets.QWidget):
         super().__init__(parent)
         self.initUi()
         self.pb_ok.clicked.connect(self.send_data)
-        self.shortcut.activated.connect(self.send_data)
+        self.shortcut_enter.activated.connect(self.send_data)
+        self.shortcut_esc.activated.connect(self.close)
 
     def initUi(self):
         resource.qInitResources()
@@ -291,7 +316,8 @@ class ConnectionWindow(QtWidgets.QWidget):
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self.urlLineEdit)
         main_layout.addWidget(self.pb_ok)
-        self.shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Enter"), self)
+        self.shortcut_enter = QtWidgets.QShortcut(QtGui.QKeySequence("Enter"), self)
+        self.shortcut_esc = QtWidgets.QShortcut(QtGui.QKeySequence("Esc"), self)
         self.setLayout(main_layout)
 
     def send_data(self):
