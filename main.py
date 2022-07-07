@@ -222,6 +222,12 @@ class MainWindow(QtWidgets.QWidget):
                                                QtWidgets.QMessageBox.No)
         if reply == QtWidgets.QMessageBox.Yes:
             requests.delete(f"{self.url}/frames/{source}")  # delete запрос на удаление файлов и записи бд
+        QtWidgets.QMessageBox.information(self, 'Успешно',
+                                               f'Запрос {source} и его файлы из хранилища удалены')
+        headers = ["№", "Название", "Дата регистрации", "Загрузить"]
+        stm = QtGui.QStandardItemModel()
+        stm.setHorizontalHeaderLabels(headers)
+        self.ui.tableView.setModel(stm)
 
     def download_file(self, item: QtCore.QModelIndex):
         """
