@@ -3,6 +3,7 @@ import time
 
 import requests
 from PySide2 import QtCore, QtWidgets, QtGui
+
 from ui.clientdb import Ui_Form
 from settings import client
 from ui.icons import resource
@@ -158,7 +159,7 @@ class MainWindow(QtWidgets.QWidget):
         """
         # Через диалоговое окно OpenFile получаем ссылку на файла
         fname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file')[0]
-        print(fname)
+
         self.file_list.append(fname)
         self.ui.listWidget.addItem(f'{fname}')
         self.ui.pd_send_file.setEnabled(True)
